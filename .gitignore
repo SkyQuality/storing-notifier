@@ -1,0 +1,19 @@
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
+.idea/
+
+# Android (wordt door de GitHub Actions workflow gegenereerd, niet committen)
+android/
+ios/
+local.properties
+key.properties
+
+# OS
+.DS_Store

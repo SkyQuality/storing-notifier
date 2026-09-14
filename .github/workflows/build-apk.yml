@@ -1,0 +1,63 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code ophalen
+        uses: actions/checkout@v4
+
+      - name: Java installeren
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Flutter installeren
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # De android/ map wordt hier gegenereerd i.p.v. gecommit in git, zodat
+      # hij altijd exact past bij de Flutter-versie die deze workflow
+      # installeert. Dit is de officiële manier om Android-ondersteuning
+      # toe te voegen aan een bestaand Flutter-project.
+      - name: Android-projectmap genereren
+        run: flutter create --platforms=android --org com.tridigi .
+
+      # flutter create voegt zelf geen permissies of de foreground-service
+      # registratie toe, dus die zetten we er hier bij.
+      - name: Permissies en foreground-service toevoegen aan AndroidManifest
+        run: python3 scripts/patch_manifest.py
+
+      # flutter_local_notifications heeft "core library desugaring" nodig
+      # (gebruikt moderne Java-APIs die op oudere Android-versies via
+      # desugaring beschikbaar worden gemaakt). flutter create zet dit niet
+      # standaard aan, dus dat patchen we hier in het gegenereerde
+      # Gradle-bestand (werkt voor zowel build.gradle als build.gradle.kts).
+      - name: Core library desugaring inschakelen
+        run: python3 scripts/enable_desugaring.py
+
+      - name: Dependencies installeren
+        run: flutter pub get
+
+      - name: Code analyseren (informatief, faalt de build niet)
+        run: flutter analyze || true
+
+      - name: Release-APK bouwen
+        run: flutter build apk --release
+
+      - name: APK als download beschikbaar maken
+        uses: actions/upload-artifact@v4
+        with:
+          name: storing-notifier-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
