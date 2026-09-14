@@ -38,11 +38,17 @@ class ForegroundServiceManager {
     Duration interval = const Duration(minutes: 20),
   }) async {
     FlutterForegroundTask.init(
-      androidNotificationOptions: const AndroidNotificationOptions(
+      androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'storing_notifier_service',
         channelName: 'Storing Notifier - actief',
         channelDescription:
             'Houdt de achtergrondcontrole van de storingsfeeds actief',
+      ),
+      // Deze app is alleen voor Android gebouwd, maar de package vereist
+      // dit argument altijd (ook al doet het op Android niets).
+      iosNotificationOptions: const IOSNotificationOptions(
+        showNotification: false,
+        playSound: false,
       ),
       foregroundTaskOptions: ForegroundTaskOptions(
         eventAction: ForegroundTaskEventAction.repeat(interval.inMilliseconds),
